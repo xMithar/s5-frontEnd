@@ -64,7 +64,7 @@ const recentQRCodes = [
     scans: 1243,
     status: "Active",
     date: "Feb 28, 2026",
-    url: "qrflow.io/s/summer26",
+    url: "scandz.io/s/summer26",
   },
   {
     id: "qr-002",
@@ -73,7 +73,7 @@ const recentQRCodes = [
     scans: 892,
     status: "Active",
     date: "Feb 25, 2026",
-    url: "qrflow.io/s/launch",
+    url: "scandz.io/s/launch",
   },
   {
     id: "qr-003",
@@ -82,7 +82,7 @@ const recentQRCodes = [
     scans: 567,
     status: "Paused",
     date: "Feb 20, 2026",
-    url: "qrflow.io/s/event-reg",
+    url: "scandz.io/s/event-reg",
   },
   {
     id: "qr-004",
@@ -91,7 +91,7 @@ const recentQRCodes = [
     scans: 2341,
     status: "Active",
     date: "Feb 15, 2026",
-    url: "qrflow.io/s/menu",
+    url: "scandz.io/s/menu",
   },
   {
     id: "qr-005",
@@ -100,7 +100,7 @@ const recentQRCodes = [
     scans: 198,
     status: "Active",
     date: "Feb 10, 2026",
-    url: "qrflow.io/s/wifi",
+    url: "scandz.io/s/wifi",
   },
   {
     id: "qr-006",
@@ -109,7 +109,7 @@ const recentQRCodes = [
     scans: 421,
     status: "Draft",
     date: "Feb 5, 2026",
-    url: "qrflow.io/s/contact",
+    url: "scandz.io/s/contact",
   },
 ]
 
