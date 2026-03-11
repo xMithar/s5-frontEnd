@@ -370,17 +370,38 @@ export default function AdminProfile() {
                     type={showPasswords.confirm ? "text" : "password"}
                     value={passwordData.confirm}
                     onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 pr-10 text-foreground placeholder-muted-foreground transition-colors focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                    className={`w-full rounded-lg border bg-background px-3 py-2 pr-10 text-foreground placeholder-muted-foreground transition-colors focus:outline-none focus:ring-1 ${
+                      passwordData.confirm && passwordData.new
+                        ? passwordData.new === passwordData.confirm
+                          ? "border-emerald-500 focus:border-emerald-500 focus:ring-emerald-500"
+                          : "border-destructive focus:border-destructive focus:ring-destructive"
+                        : "border-border focus:border-primary focus:ring-primary"
+                    }`}
                     placeholder="Confirm new password"
                   />
                   <button
                     onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-10 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                     type="button"
                   >
                     {showPasswords.confirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
+                  {passwordData.confirm && passwordData.new && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      {passwordData.new === passwordData.confirm ? (
+                        <Check className="h-5 w-5 text-emerald-500" />
+                      ) : (
+                        <X className="h-5 w-5 text-destructive" />
+                      )}
+                    </div>
+                  )}
                 </div>
+                {passwordData.confirm && passwordData.new && passwordData.new !== passwordData.confirm && (
+                  <p className="mt-1 text-xs text-destructive">Passwords do not match</p>
+                )}
+                {passwordData.new === passwordData.confirm && passwordData.new && (
+                  <p className="mt-1 text-xs text-emerald-600">Passwords match</p>
+                )}
               </div>
             </div>
             <AlertDialogFooter className="mt-4 sm:justify-center gap-3">
@@ -389,7 +410,14 @@ export default function AdminProfile() {
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleChangePassword}
-                className="flex-1 sm:flex-none sm:min-w-[120px] bg-primary text-primary-foreground hover:bg-primary/90"
+                disabled={
+                  !passwordData.current || 
+                  !passwordData.new || 
+                  !passwordData.confirm || 
+                  passwordData.new !== passwordData.confirm ||
+                  passwordData.new.length < 8
+                }
+                className="flex-1 sm:flex-none sm:min-w-[120px] bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Update Password
               </AlertDialogAction>
