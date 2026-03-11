@@ -1,6 +1,7 @@
 "use client"
 
 import { Bell, Search, ShieldCheck } from "lucide-react"
+import { useEffect, useState } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,8 +21,14 @@ export function SuperAdminHeader({
   title: string
   onMobileMenuClick: () => void
 }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-card px-4 sm:px-6" suppressHydrationWarning>
       <div className="flex items-center gap-3">
         <SuperAdminMobileMenuButton onClick={onMobileMenuClick} />
         <div className="flex items-center gap-2">
@@ -52,30 +59,32 @@ export function SuperAdminHeader({
         </button>
 
         {/* User dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 rounded-lg p-1.5 h-auto hover:bg-accent">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
-                  SA
-                </AvatarFallback>
-              </Avatar>
-              <div className="hidden text-left sm:block">
-                <p className="text-sm font-medium leading-none text-foreground">Super Admin</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">superadmin@qrflow.com</p>
-              </div>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Super Admin Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>System Settings</DropdownMenuItem>
-            <DropdownMenuItem>Audit Log</DropdownMenuItem>
-            <DropdownMenuItem>API Keys</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {mounted && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 rounded-lg p-1.5 h-auto hover:bg-accent">
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-xs font-semibold text-primary-foreground">
+                    SA
+                  </AvatarFallback>
+                </Avatar>
+                <div className="hidden text-left sm:block">
+                  <p className="text-sm font-medium leading-none text-foreground">Super Admin</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">superadmin@qrflow.com</p>
+                </div>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuLabel>Super Admin Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>System Settings</DropdownMenuItem>
+              <DropdownMenuItem>Audit Log</DropdownMenuItem>
+              <DropdownMenuItem>API Keys</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive">Logout</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
       </div>
     </header>
   )
