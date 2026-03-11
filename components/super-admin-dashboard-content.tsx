@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import {
   Users,
   QrCode,
@@ -272,9 +273,9 @@ export function SuperAdminDashboardContent() {
         <div className="rounded-xl border border-border bg-card p-5 shadow-sm xl:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-base font-semibold text-foreground">Top Admin Accounts</h2>
-            <button className="text-sm font-medium text-primary hover:underline">
+            <Link href="/super-admin/admins" className="text-sm font-medium text-primary hover:underline">
               Manage all
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">

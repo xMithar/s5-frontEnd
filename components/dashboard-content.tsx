@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+import { useState } from "react"
 import {
   QrCode,
   ScanLine,
@@ -11,6 +13,7 @@ import {
   Copy,
   MoreHorizontal,
   TrendingUp,
+  Check,
 } from "lucide-react"
 import { DashboardCharts } from "./dashboard-charts"
 
@@ -55,6 +58,7 @@ const stats = [
 
 const recentQRCodes = [
   {
+    id: "qr-001",
     name: "Summer Sale 2026",
     type: "URL",
     scans: 1243,
@@ -63,6 +67,7 @@ const recentQRCodes = [
     url: "qrflow.io/s/summer26",
   },
   {
+    id: "qr-002",
     name: "Product Launch",
     type: "URL",
     scans: 892,
@@ -71,6 +76,7 @@ const recentQRCodes = [
     url: "qrflow.io/s/launch",
   },
   {
+    id: "qr-003",
     name: "Event Registration",
     type: "vCard",
     scans: 567,
@@ -79,6 +85,7 @@ const recentQRCodes = [
     url: "qrflow.io/s/event-reg",
   },
   {
+    id: "qr-004",
     name: "Restaurant Menu",
     type: "URL",
     scans: 2341,
@@ -87,6 +94,7 @@ const recentQRCodes = [
     url: "qrflow.io/s/menu",
   },
   {
+    id: "qr-005",
     name: "WiFi Access",
     type: "WiFi",
     scans: 198,
@@ -95,6 +103,7 @@ const recentQRCodes = [
     url: "qrflow.io/s/wifi",
   },
   {
+    id: "qr-006",
     name: "Contact Card",
     type: "vCard",
     scans: 421,
@@ -139,6 +148,42 @@ function TypeBadge({ type }: { type: string }) {
     <span className="inline-flex items-center rounded-md bg-primary/8 px-2 py-0.5 text-xs font-medium text-primary ring-1 ring-primary/15">
       {type}
     </span>
+  )
+}
+
+function CopyButton({ url, name }: { url: string; name: string }) {
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(`https://${url}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea")
+      textArea.value = `https://${url}`
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+        copied
+          ? "bg-emerald-100 text-emerald-600"
+          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+      }`}
+      aria-label={copied ? "Copied!" : `Copy link for ${name}`}
+    >
+      {copied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+    </button>
   )
 }
 
@@ -214,9 +259,12 @@ export function DashboardContent() {
                 Your latest created codes
               </p>
             </div>
-            <button className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+            <Link
+              href="/admin/qr-codes"
+              className="rounded-lg border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+            >
               View all
-            </button>
+            </Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
@@ -245,19 +293,22 @@ export function DashboardContent() {
               <tbody>
                 {recentQRCodes.map((qr) => (
                   <tr
-                    key={qr.name}
+                    key={qr.id}
                     className="border-b border-border transition-colors last:border-0 hover:bg-muted/30"
                   >
                     <td className="px-5 py-3.5">
-                      <div className="flex items-center gap-3">
+                      <Link
+                        href={`/admin/qr-codes/${qr.id}`}
+                        className="flex items-center gap-3 group"
+                      >
                         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
                           <QrCode className="h-4 w-4 text-primary" />
                         </div>
                         <div>
-                          <p className="font-medium text-foreground">{qr.name}</p>
+                          <p className="font-medium text-foreground group-hover:text-primary transition-colors">{qr.name}</p>
                           <p className="text-xs text-muted-foreground">{qr.url}</p>
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td className="px-5 py-3.5">
                       <TypeBadge type={qr.type} />
@@ -271,24 +322,23 @@ export function DashboardContent() {
                     <td className="px-5 py-3.5 text-muted-foreground">{qr.date}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex items-center gap-1">
-                        <button
+                        <CopyButton url={qr.url} name={qr.name} />
+                        <a
+                          href={`https://${qr.url}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          aria-label={`Copy link for ${qr.name}`}
-                        >
-                          <Copy className="h-3.5 w-3.5" />
-                        </button>
-                        <button
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          aria-label={`Open ${qr.name}`}
+                          aria-label={`Open ${qr.name} in new tab`}
                         >
                           <ExternalLink className="h-3.5 w-3.5" />
-                        </button>
-                        <button
+                        </a>
+                        <Link
+                          href={`/admin/qr-codes/${qr.id}`}
                           className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
-                          aria-label={`More options for ${qr.name}`}
+                          aria-label={`View details for ${qr.name}`}
                         >
                           <MoreHorizontal className="h-3.5 w-3.5" />
-                        </button>
+                        </Link>
                       </div>
                     </td>
                   </tr>
@@ -306,18 +356,27 @@ export function DashboardContent() {
               Quick Actions
             </h2>
             <div className="space-y-3">
-              <button className="flex w-full items-center gap-3 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90">
+              <Link
+                href="/admin/create"
+                className="flex w-full items-center gap-3 rounded-lg bg-primary px-4 py-3 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90"
+              >
                 <QrCode className="h-5 w-5" />
                 Create New QR Code
-              </button>
-              <button className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+              </Link>
+              <Link
+                href="/admin/analytics"
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
                 <ScanLine className="h-5 w-5" />
                 Scan Analytics
-              </button>
-              <button className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground">
+              </Link>
+              <Link
+                href="/admin/analytics"
+                className="flex w-full items-center gap-3 rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
                 <TrendingUp className="h-5 w-5" />
                 View Reports
-              </button>
+              </Link>
             </div>
           </div>
 

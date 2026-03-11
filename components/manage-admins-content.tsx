@@ -9,7 +9,18 @@ import {
   X,
   Mail,
   Shield,
+  AlertTriangle,
 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -410,6 +421,8 @@ export function ManageAdminsContent() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [editingAdmin, setEditingAdmin] = useState<AdminAccount | null>(null)
   const [admins, setAdmins] = useState<AdminAccount[]>(mockAdmins)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [adminToDelete, setAdminToDelete] = useState<AdminAccount | null>(null)
 
   const filteredAdmins = useMemo(() => {
     return admins.filter((admin) =>
@@ -441,6 +454,19 @@ export function ManageAdminsContent() {
 
   const handleDeleteAdmin = (id: number) => {
     setAdmins((prev) => prev.filter((admin) => admin.id !== id))
+  }
+
+  const openDeleteDialog = (admin: AdminAccount) => {
+    setAdminToDelete(admin)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = () => {
+    if (adminToDelete) {
+      handleDeleteAdmin(adminToDelete.id)
+      setAdminToDelete(null)
+      setDeleteDialogOpen(false)
+    }
   }
 
   return (
@@ -556,21 +582,13 @@ export function ManageAdminsContent() {
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button
-                          onClick={() => {
-                            if (
-                              confirm(
-                                `Are you sure you want to delete ${admin.name}?`
-                              )
-                            ) {
-                              handleDeleteAdmin(admin.id)
-                            }
-                          }}
-                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                          aria-label={`Delete ${admin.name}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+<button
+                                          onClick={() => openDeleteDialog(admin)}
+                                          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+                                          aria-label={`Delete ${admin.name}`}
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </button>
                       </div>
                     </td>
                   </tr>
@@ -606,6 +624,39 @@ export function ManageAdminsContent() {
         admin={editingAdmin}
         onSave={handleSaveAdmin}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent className="max-w-md">
+          <AlertDialogHeader>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+              <AlertTriangle className="h-7 w-7 text-destructive" />
+            </div>
+            <AlertDialogTitle className="text-center">
+              Delete Admin Account
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-center">
+              Are you sure you want to delete{" "}
+              <span className="font-semibold text-foreground">
+                {adminToDelete?.name}
+              </span>
+              ? This action cannot be undone and will permanently remove their
+              access to the system.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="mt-4 sm:justify-center gap-3">
+            <AlertDialogCancel className="flex-1 sm:flex-none sm:min-w-[120px]">
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="flex-1 sm:flex-none sm:min-w-[120px] bg-destructive text-white hover:bg-destructive/90"
+            >
+              Delete Admin
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
