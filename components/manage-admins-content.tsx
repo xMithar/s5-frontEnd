@@ -650,7 +650,7 @@ export function ManageAdminsContent() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="flex-1 sm:flex-none sm:min-w-[120px] bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="flex-1 sm:flex-none sm:min-w-[120px] bg-destructive text-white hover:bg-destructive/90"
             >
               Delete Admin
             </AlertDialogAction>
