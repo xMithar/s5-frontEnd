@@ -19,6 +19,8 @@ export const API_ENDPOINTS = {
   // Users endpoints
   USERS: {
     LIST: '/users',
+    CHANGE_PASSWORD: '/users/change-password',
+    DELETE: '/users',
   },
 }
 
