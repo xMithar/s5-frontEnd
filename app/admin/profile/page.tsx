@@ -1,8 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { AdminShell } from "@/components/admin-shell"
-import { Mail, Phone, MapPin, Calendar, Edit2, Lock, Shield, X, AlertTriangle, Eye, EyeOff, Check } from "lucide-react"
+import { Mail, Phone, MapPin, Calendar, Edit2, Lock, Shield, X, AlertTriangle, Eye, EyeOff, Check, Loader } from "lucide-react"
 import { toast } from "sonner"
 import {
   AlertDialog,
@@ -14,8 +15,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { changePassword, deleteAccount } from "@/lib/api/auth"
 
 export default function AdminProfile() {
+  const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
   const [profileData, setProfileData] = useState({
     name: "Admin User",
@@ -36,6 +39,8 @@ export default function AdminProfile() {
     new: false,
     confirm: false,
   })
+  const [isLoadingPassword, setIsLoadingPassword] = useState(false)
+  const [isLoadingDelete, setIsLoadingDelete] = useState(false)
 
   const handleSaveChanges = () => {
     setProfileData(editData)
@@ -48,7 +53,7 @@ export default function AdminProfile() {
     setIsEditing(false)
   }
 
-  const handleChangePassword = () => {
+  const handleChangePassword = async () => {
     if (!passwordData.current) {
       toast.error("Please enter your current password")
       return
@@ -65,15 +70,35 @@ export default function AdminProfile() {
       toast.error("Passwords do not match")
       return
     }
-    toast.success("Password changed successfully")
-    setChangePasswordOpen(false)
-    setPasswordData({ current: "", new: "", confirm: "" })
+
+    setIsLoadingPassword(true)
+    try {
+      await changePassword(passwordData.current, passwordData.new)
+      toast.success("Password changed successfully")
+      setChangePasswordOpen(false)
+      setPasswordData({ current: "", new: "", confirm: "" })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to change password"
+      toast.error(message)
+    } finally {
+      setIsLoadingPassword(false)
+    }
   }
 
-  const handleDeleteAccount = () => {
-    toast.success("Account deleted successfully")
-    setDeleteAccountOpen(false)
-    // In a real app, this would redirect to login or home page
+  const handleDeleteAccount = async () => {
+    setIsLoadingDelete(true)
+    try {
+      await deleteAccount()
+      toast.success("Account deleted successfully. Redirecting...")
+      setTimeout(() => {
+        router.push("/login")
+      }, 1500)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to delete account"
+      toast.error(message)
+      setDeleteAccountOpen(false)
+      setIsLoadingDelete(false)
+    }
   }
 
   return (
@@ -415,11 +440,19 @@ export default function AdminProfile() {
                   !passwordData.new || 
                   !passwordData.confirm || 
                   passwordData.new !== passwordData.confirm ||
-                  passwordData.new.length < 8
+                  passwordData.new.length < 8 ||
+                  isLoadingPassword
                 }
                 className="flex-1 sm:flex-none sm:min-w-[120px] bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Update Password
+                {isLoadingPassword ? (
+                  <>
+                    <Loader className="inline h-4 w-4 animate-spin mr-2" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update Password"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -445,9 +478,17 @@ export default function AdminProfile() {
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteAccount}
-                className="flex-1 sm:flex-none sm:min-w-[120px] bg-destructive text-white hover:bg-destructive/90"
+                disabled={isLoadingDelete}
+                className="flex-1 sm:flex-none sm:min-w-[120px] bg-destructive text-white hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Delete Account
+                {isLoadingDelete ? (
+                  <>
+                    <Loader className="inline h-4 w-4 animate-spin mr-2" />
+                    Deleting...
+                  </>
+                ) : (
+                  "Delete Account"
+                )}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

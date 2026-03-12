@@ -10,7 +10,9 @@ import {
   Mail,
   Shield,
   AlertTriangle,
+  Loader,
 } from "lucide-react"
+import { toast } from "sonner"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,6 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { getUsers } from "@/lib/api/auth"
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -423,6 +426,42 @@ export function ManageAdminsContent() {
   const [admins, setAdmins] = useState<AdminAccount[]>(mockAdmins)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [adminToDelete, setAdminToDelete] = useState<AdminAccount | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load admins from API
+  useEffect(() => {
+    const fetchAdmins = async () => {
+      try {
+        setIsLoading(true)
+        const users = await getUsers()
+        // Map API response to component format
+        const mapped = users.map((user: any, index: number) => ({
+          id: user.id,
+          name: user.email.split("@")[0] || `Admin ${index + 1}`,
+          email: user.email,
+          status: user.is_active ? "Active" : "Suspended",
+          canCreateQR: user.role === "admin",
+          createdAt: new Date(user.created_at || Date.now()).toLocaleDateString("en-US", { 
+            month: "short", 
+            day: "numeric", 
+            year: "numeric" 
+          }),
+        }))
+        setAdmins(mapped)
+        setError(null)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load admins"
+        setError(message)
+        // Keep mock data as fallback
+        setAdmins(mockAdmins)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchAdmins()
+  }, [])
 
   const filteredAdmins = useMemo(() => {
     return admins.filter((admin) =>
@@ -467,6 +506,27 @@ export function ManageAdminsContent() {
       setAdminToDelete(null)
       setDeleteDialogOpen(false)
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <Loader className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-sm text-muted-foreground">Loading admin accounts...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20">
+          {error}
+        </div>
+      </div>
+    )
   }
 
   return (

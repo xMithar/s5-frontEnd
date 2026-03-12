@@ -87,3 +87,49 @@ export async function getUsers(): Promise<UserRead[]> {
 
   return response.json()
 }
+
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const token = getAuthToken()
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch(getApiUrl(API_ENDPOINTS.USERS.CHANGE_PASSWORD), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      current_password: currentPassword,
+      new_password: newPassword,
+    }),
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to change password')
+  }
+}
+
+export async function deleteAccount(): Promise<void> {
+  const token = getAuthToken()
+  if (!token) {
+    throw new Error('Not authenticated')
+  }
+
+  const response = await fetch(getApiUrl(API_ENDPOINTS.USERS.DELETE), {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.detail || 'Failed to delete account')
+  }
+
+  // Clear auth token after successful deletion
+  removeAuthToken()
+}

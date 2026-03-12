@@ -1,9 +1,10 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import QRCode from "react-qr-code"
+import { listQRCodes, deleteQRCode } from "@/lib/api/qrcodes"
 import {
   QrCode,
   Search,
@@ -283,6 +284,45 @@ export function QRCodesContent() {
   const [qrCodes, setQrCodes] = useState<QRCodeItem[]>(mockQRCodes)
   const [deleteId, setDeleteId] = useState<number | null>(null)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  // Load QR codes from API
+  useEffect(() => {
+    const fetchQRCodes = async () => {
+      try {
+        setIsLoading(true)
+        const data = await listQRCodes()
+        // Map API response to component format
+        const mapped = data.map((qr, index) => ({
+          id: qr.id,
+          name: qr.short_code || `QR Code ${index + 1}`,
+          type: qr.is_dynamic ? "Dynamic" : "Static",
+          contentType: "URL" as ContentType,
+          color: qr.color || "#4F46E5",
+          scans: qr.total_scans || 0,
+          status: qr.is_dynamic ? "Active" : "Disabled",
+          createdAt: new Date(qr.created_at || Date.now()).toLocaleDateString("en-US", { 
+            month: "short", 
+            day: "numeric", 
+            year: "numeric" 
+          }),
+          url: qr.destination_url,
+        }))
+        setQrCodes(mapped)
+        setError(null)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load QR codes"
+        setError(message)
+        // Keep mock data as fallback
+        setQrCodes(mockQRCodes)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchQRCodes()
+  }, [])
 
   const handleEditClick = (qr: QRCodeItem) => {
     router.push(`/admin/qr-codes/${qr.id}`)
@@ -293,13 +333,19 @@ export function QRCodesContent() {
     setShowDeleteModal(true)
   }
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (deleteId) {
-      const deletedQR = qrCodes.find(q => q.id === deleteId)
-      setQrCodes(qrCodes.filter(q => q.id !== deleteId))
-      toast(`QR Code "${deletedQR?.name}" deleted`)
-      setShowDeleteModal(false)
-      setDeleteId(null)
+      try {
+        await deleteQRCode(deleteId)
+        const deletedQR = qrCodes.find(q => q.id === deleteId)
+        setQrCodes(qrCodes.filter(q => q.id !== deleteId))
+        toast.success(`QR Code "${deletedQR?.name}" deleted`)
+        setShowDeleteModal(false)
+        setDeleteId(null)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to delete QR code"
+        toast.error(message)
+      }
     }
   }
 
@@ -337,6 +383,30 @@ export function QRCodesContent() {
 
   const totalScans = filteredData.reduce((sum, qr) => sum + qr.scans, 0)
   const activeCount = filteredData.filter((qr) => qr.status === "Active").length
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <svg className="mx-auto h-12 w-12 animate-spin text-primary" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="mt-4 text-sm text-muted-foreground">Loading QR codes...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20">
+          {error}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">

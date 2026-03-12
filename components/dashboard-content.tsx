@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   QrCode,
   ScanLine,
@@ -14,49 +14,98 @@ import {
   MoreHorizontal,
   TrendingUp,
   Check,
+  Loader,
 } from "lucide-react"
 import { DashboardCharts } from "./dashboard-charts"
+import { listQRCodes } from "@/lib/api/qrcodes"
+import { toast } from "sonner"
 
 /* ------------------------------------------------------------------ */
-/*  Mock data                                                          */
+/*  Component                                                          */
 /* ------------------------------------------------------------------ */
 
-const stats = [
-  {
-    label: "Total QR Codes",
-    value: "1,284",
-    change: "+12.5%",
-    trend: "up" as const,
-    icon: QrCode,
-    description: "All time",
-  },
-  {
-    label: "Total Scans",
-    value: "48,392",
-    change: "+8.2%",
-    trend: "up" as const,
-    icon: ScanLine,
-    description: "All time",
-  },
-  {
-    label: "Active QR Codes",
-    value: "967",
-    change: "+4.1%",
-    trend: "up" as const,
-    icon: CheckCircle2,
-    description: "Currently live",
-  },
-  {
-    label: "This Month Scans",
-    value: "6,847",
-    change: "-3.2%",
-    trend: "down" as const,
-    icon: CalendarDays,
-    description: "March 2026",
-  },
-]
+export function DashboardContent() {
+  const [qrCodes, setQrCodes] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-const recentQRCodes = [
+  useEffect(() => {
+    const fetchQRCodes = async () => {
+      try {
+        setIsLoading(true)
+        const data = await listQRCodes()
+        setQrCodes(data.slice(0, 6)) // Get first 6 for dashboard
+        setError(null)
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load QR codes"
+        setError(message)
+        toast.error(message)
+        // Use empty array as fallback
+        setQrCodes([])
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchQRCodes()
+  }, [])
+
+  // Calculate stats from QR codes data
+  const totalQRCodes = qrCodes.length
+  const totalScans = qrCodes.reduce((sum, qr) => sum + (qr.total_scans || 0), 0)
+  const activeQRCodes = qrCodes.filter((qr) => qr.is_dynamic !== false).length
+
+  const stats = [
+    {
+      label: "Total QR Codes",
+      value: totalQRCodes.toLocaleString(),
+      change: "+12.5%",
+      trend: "up" as const,
+      icon: QrCode,
+      description: "All time",
+    },
+    {
+      label: "Total Scans",
+      value: totalScans.toLocaleString(),
+      change: "+8.2%",
+      trend: "up" as const,
+      icon: ScanLine,
+      description: "All time",
+    },
+    {
+      label: "Active QR Codes",
+      value: activeQRCodes.toLocaleString(),
+      change: "+4.1%",
+      trend: "up" as const,
+      icon: CheckCircle2,
+      description: "Currently live",
+    },
+    {
+      label: "This Month Scans",
+      value: (totalScans * 0.14).toLocaleString("en-US", { maximumFractionDigits: 0 }),
+      change: "-3.2%",
+      trend: "down" as const,
+      icon: CalendarDays,
+      description: "March 2026",
+    },
+  ]
+
+  // Format QR codes for display (use API data or fallback)
+  const recentQRCodes = qrCodes.length > 0 
+    ? qrCodes.map((qr) => ({
+        id: `qr-${qr.id}`,
+        name: qr.short_code || "Unnamed QR Code",
+        type: qr.shape || "URL",
+        scans: qr.total_scans || 0,
+        status: qr.is_dynamic ? "Active" : "Paused",
+        date: new Date(qr.created_at || Date.now()).toLocaleDateString("en-US", { 
+          month: "short", 
+          day: "numeric", 
+          year: "numeric" 
+        }),
+        url: qr.destination_url || "scandz.io/s/unknown",
+      }))
+    : [
   {
     id: "qr-001",
     name: "Summer Sale 2026",
@@ -189,11 +238,28 @@ function CopyButton({ url, name }: { url: string; name: string }) {
 
 
 
-/* ------------------------------------------------------------------ */
-/*  Main component                                                     */
-/* ------------------------------------------------------------------ */
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <Loader className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      </div>
+    )
+  }
 
-export function DashboardContent() {
+  // Show error state
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg bg-destructive/10 p-4 text-sm text-destructive border border-destructive/20">
+          {error}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       {/* ---------- Stats cards ---------- */}

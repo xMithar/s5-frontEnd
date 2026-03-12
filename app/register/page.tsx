@@ -1,11 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { ArrowRight, Check, X } from "lucide-react"
+import { ArrowRight, Check, X, Loader } from "lucide-react"
 import { PublicFooter } from "@/components/public-footer"
+import { register as registerUser } from "@/lib/api/auth"
+import { toast } from "sonner"
 
 export default function Register() {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -14,6 +18,7 @@ export default function Register() {
     terms: false,
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(false)
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -48,10 +53,26 @@ export default function Register() {
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (validateForm()) {
-      console.log("[v0] Form is valid, would submit:", formData)
+    if (!validateForm()) return
+
+    setIsLoading(true)
+    try {
+      await registerUser({
+        email: formData.email,
+        password: formData.password,
+      })
+      toast.success("Account created successfully! Redirecting to login...")
+      setTimeout(() => {
+        router.push("/login")
+      }, 1500)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Registration failed"
+      toast.error(message)
+      setErrors({ submit: message })
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -88,6 +109,13 @@ export default function Register() {
           </p>
 
           <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
+            {/* Server Error */}
+            {errors.submit && (
+              <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive border border-destructive/20">
+                {errors.submit}
+              </div>
+            )}
+
             {/* Name */}
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-foreground">
@@ -218,15 +246,24 @@ export default function Register() {
             {/* Register Button */}
             <button
               type="submit"
-              disabled={!isFormValid}
+              disabled={!isFormValid || isLoading}
               className={`w-full rounded-lg px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-all ${
-                isFormValid
+                isFormValid && !isLoading
                   ? "bg-primary text-primary-foreground hover:opacity-90 cursor-pointer"
                   : "bg-muted text-muted-foreground cursor-not-allowed opacity-60"
               }`}
             >
-              Create Account
-              <ArrowRight className="h-4 w-4" />
+              {isLoading ? (
+                <>
+                  <Loader className="h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
+              ) : (
+                <>
+                  Create Account
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </form>
 
