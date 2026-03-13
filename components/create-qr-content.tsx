@@ -1,7 +1,10 @@
 "use client"
 
 import { useState, useRef, type ChangeEvent, type DragEvent } from "react"
+import { useRouter } from "next/navigation"
 import QRCode from "react-qr-code"
+import { toast } from "sonner"
+import { createQRCode } from "@/lib/api/qrcodes"
 import {
   QrCode,
   Link2,
@@ -21,6 +24,7 @@ import {
   ToggleRight,
   Image,
   SquareRoundCorner,
+  Loader,
 } from "lucide-react"
 
 /* ------------------------------------------------------------------ */
@@ -68,6 +72,8 @@ const contentTypeTabs: { id: ContentType; label: string; icon: typeof Link2 }[] 
 /* ------------------------------------------------------------------ */
 
 export function CreateQRContent() {
+  const router = useRouter()
+  
   /* --- form state --- */
   const [qrName, setQrName] = useState("")
   const [qrType, setQrType] = useState<"static" | "dynamic">("dynamic")
@@ -92,6 +98,7 @@ export function CreateQRContent() {
 
   /* ui */
   const [copied, setCopied] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
 
   /* --- derived --- */
   const qrValue = (() => {
@@ -117,6 +124,33 @@ export function CreateQRContent() {
   const handleCopy = () => {
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleCreateQRCode = async () => {
+    // Validate required fields
+    if (!url && contentType === "url") {
+      toast.error("Please enter a destination URL")
+      return
+    }
+
+    setIsCreating(true)
+    try {
+      const response = await createQRCode({
+        destination_url: url || "https://example.com",
+        color: fgColor,
+        shape: roundedCorners ? "rounded" : "square",
+        is_dynamic: qrType === "dynamic",
+      })
+
+      toast.success("QR Code created successfully!")
+      // Redirect to QR codes list
+      router.push("/admin/qr-codes")
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to create QR code"
+      toast.error(message)
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const handleReset = () => {
@@ -713,10 +747,21 @@ export function CreateQRContent() {
           </button>
           <button
             type="button"
-            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90"
+            onClick={handleCreateQRCode}
+            disabled={isCreating || !url}
+            className="flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <QrCode className="h-4 w-4" />
-            Save QR Code
+            {isCreating ? (
+              <>
+                <Loader className="h-4 w-4 animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <QrCode className="h-4 w-4" />
+                Save QR Code
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AdminShell } from "@/components/admin-shell"
 import { Mail, Phone, MapPin, Calendar, Edit2, Lock, Shield, X, AlertTriangle, Eye, EyeOff, Check, Loader } from "lucide-react"
@@ -15,16 +15,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { changePassword, deleteAccount } from "@/lib/api/auth"
+import { changePassword, deleteAccount, getUsers } from "@/lib/api/auth"
 
 export default function AdminProfile() {
   const router = useRouter()
   const [isEditing, setIsEditing] = useState(false)
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
   const [profileData, setProfileData] = useState({
     name: "Admin User",
     email: "admin@qrflow.com",
-    phone: "+1 (555) 123-4567",
-    location: "San Francisco, CA, USA",
+    phone: "",
+    location: "",
   })
   const [editData, setEditData] = useState(profileData)
   const [changePasswordOpen, setChangePasswordOpen] = useState(false)
@@ -41,6 +42,38 @@ export default function AdminProfile() {
   })
   const [isLoadingPassword, setIsLoadingPassword] = useState(false)
   const [isLoadingDelete, setIsLoadingDelete] = useState(false)
+
+  // Fetch user profile data on mount
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        setIsLoadingProfile(true)
+        const users = await getUsers()
+        if (users && users.length > 0) {
+          const user = users[0]
+          setProfileData({
+            name: user.email.split("@")[0] || "Admin User",
+            email: user.email,
+            phone: user.phone_number || "",
+            location: "",
+          })
+          setEditData({
+            name: user.email.split("@")[0] || "Admin User",
+            email: user.email,
+            phone: user.phone_number || "",
+            location: "",
+          })
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load profile"
+        toast.error(message)
+      } finally {
+        setIsLoadingProfile(false)
+      }
+    }
+
+    fetchUserProfile()
+  }, [])
 
   const handleSaveChanges = () => {
     setProfileData(editData)
@@ -99,6 +132,19 @@ export default function AdminProfile() {
       setDeleteAccountOpen(false)
       setIsLoadingDelete(false)
     }
+  }
+
+  if (isLoadingProfile) {
+    return (
+      <AdminShell title="Profile">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Loader className="mx-auto h-8 w-8 animate-spin text-primary" />
+            <p className="mt-4 text-sm text-muted-foreground">Loading profile...</p>
+          </div>
+        </div>
+      </AdminShell>
+    )
   }
 
   return (
